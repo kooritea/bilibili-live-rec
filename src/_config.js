@@ -12,9 +12,8 @@ function mkdirsSync(dirname) {
     }
   }
 }
-config.save = path.join(process.cwd(), config.save?config.save:'./output')
-config.tmp = path.join(process.cwd(), config.tmp?config.tmp:'./output/tmp')
-
+config.save = path.resolve(process.cwd(), config.save?config.save:'./output')
+config.tmp = path.resolve(process.cwd(), config.tmp?config.tmp:'./output/tmp')
 mkdirsSync(config.save)
 mkdirsSync(config.tmp)
 
