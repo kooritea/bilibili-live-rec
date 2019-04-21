@@ -1,0 +1,30 @@
+{
+  "name": "bilibili-live-rec",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "node --experimental-worker index.js",
+    "test": "node --experimental-worker test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kooritea/bilibili-live-rec.git"
+  },
+  "keywords": [
+    "bilibili",
+    "live",
+    "rec",
+    "flv"
+  ],
+  "author": "kooritea",
+  "license": "GPL3.0",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "request": "^2.88.0",
+    "ws": "^6.2.1"
+  }
+}
