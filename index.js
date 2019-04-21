@@ -38,27 +38,27 @@ if(isMainThread){
     })
   }
   (async function(){
-    // for(let room of config.RoomList){
-    //   try{
-    //     listen(room,recready)
-    //   }catch(e){
-    //     Logger.notice(e)
-    //   }
-    //   await sleep(5000)
-    // }
-    setTimeout(()=>{
-      let flv = recready({
-        nickname: 'una',
-        roomid: 43822,
-        status :false,
-        timeout : null,
-        lastdanmu : null,
-        try : 0,
-      })
-      setTimeout(()=>{
-        flv.stop()
-      },5000)
-    })
+    for(let room of config.RoomList){
+      try{
+        listen(room,recready)
+      }catch(e){
+        Logger.notice(e)
+      }
+      await sleep(5000)
+    }
+    // setTimeout(()=>{
+    //   let flv = recready({
+    //     nickname: 'una',
+    //     roomid: 43822,
+    //     status :false,
+    //     timeout : null,
+    //     lastdanmu : null,
+    //     try : 0,
+    //   })
+    //   setTimeout(()=>{
+    //     flv.stop()
+    //   },5000)
+    // })
   })()
 }else{
   const fs = require('fs')
