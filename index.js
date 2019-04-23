@@ -65,18 +65,23 @@ if(isMainThread){
   const FlVprocessor = require('./src/FLVprocessor.js')
 
   let tmpFilename = workerData
-  new FlVprocessor({
-    input: `${config.tmp}${tmpFilename}`,
-    output: `${config.save}${tmpFilename}`,
-    callback(){
-      Logger.notice(`处理已完成： ${config.save}${tmpFilename}`)
-      if(config.deleteTmp){
-        fs.unlink(`${config.tmp}${tmpFilename}`, (err) => {
-          if (err) throw err;
-          Logger.notice(`删除临时文件：${config.tmp}${tmpFilename}`);
-        });
+  try{
+    new FlVprocessor({
+      input: `${config.tmp}${tmpFilename}`,
+      output: `${config.save}${tmpFilename}`,
+      callback(){
+        Logger.notice(`处理已完成： ${config.save}${tmpFilename}`)
+        if(config.deleteTmp){
+          fs.unlink(`${config.tmp}${tmpFilename}`, (err) => {
+            if (err) throw err;
+            Logger.notice(`删除临时文件：${config.tmp}${tmpFilename}`);
+          });
+        }
+        process.exit();
       }
-      process.exit();
-    }
-  })
+    })
+  }catch(e){
+    Logger.notice(`修复失败:${config.save}${tmpFilename}`);
+    Logger.notice(e)
+  }
 }
