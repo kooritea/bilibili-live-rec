@@ -2,6 +2,7 @@ const BigBuffer = require("../lib/BigBuffer.js")
 const ScriptTag = require("./ScriptTag.js")
 const VideoTag = require("./VideoTag.js")
 const AudioTag = require("./AudioTag.js")
+const Logger = new (require("./Logger.js"))('FLVprocessor')
 
 class FLVprocessor {
   constructor(args) {
@@ -10,10 +11,11 @@ class FLVprocessor {
         this.input = args
         break
       case 'object':
-        let { input, output, callback } = args
+        let { input, output, callback, noFix } = args
         this.input = input
         this.output = output
         this.callback = callback
+        this.noFix = noFix
         break
     }
     this.buffer = new BigBuffer(this.input)
@@ -29,11 +31,13 @@ class FLVprocessor {
   readFile() {
     this.buffer.readcb = () => {
       this.updateInfo()
-      this.buffer.saveFile(this.output,()=>{
-        if(typeof this.callback === 'function'){
-          this.callback()
-        }
-      })
+      if(!this.noFix){
+        this.buffer.saveFile(this.output,()=>{
+          if(typeof this.callback === 'function'){
+            this.callback()
+          }
+        })
+      }
     }
     this.buffer.readFile()
   }
@@ -124,6 +128,7 @@ class FLVprocessor {
     let firstTag  //第一个tag的时间戳一定是0
     let baseTimestamp = 0
     let previousTimestamp = 0
+    let onece = true
     for(let videoTag of this.videoTags){
       if(!firstTag){
         firstTag = videoTag
@@ -133,7 +138,9 @@ class FLVprocessor {
       if(newTimestamp<0){
         newTimestamp = videoTag.getTimestamp()
       }
-      if(newTimestamp>100){
+      if(onece && newTimestamp>100){
+        //仅在第二个帧是非顺序时间戳的时候进入
+        onece = false
         newTimestamp = this.videoTags[this.videoTags.indexOf(videoTag) + 1].getTimestamp() - videoTag.getTimestamp()
       }
       baseTimestamp = videoTag.getTimestamp()
@@ -145,6 +152,7 @@ class FLVprocessor {
     let firstTag  //第一个tag的时间戳一定是0
     let baseTimestamp = 0
     let previousTimestamp = 0
+    let onece = true
     for(let audioTag of this.audioTags){
       if(!firstTag){
         firstTag = audioTag
@@ -154,7 +162,9 @@ class FLVprocessor {
       if(newTimestamp<0){
         newTimestamp = audioTag.getTimestamp()
       }
-      if(newTimestamp>100){
+      if(onece && newTimestamp>100){
+        //仅在第二个帧是非顺序时间戳的时候进入
+        onece = false
         newTimestamp = this.audioTags[this.audioTags.indexOf(audioTag) + 1].getTimestamp() - audioTag.getTimestamp()
       }
       baseTimestamp = audioTag.getTimestamp()
@@ -163,7 +173,20 @@ class FLVprocessor {
     }
   }
   fixDuration(){
-    let { needUpdate } = this.scriptTags[0].setDuration(this.videoTags[this.videoTags.length - 1].getTimestamp()/1000)
+    let framerate = this.scriptTags[0].getFramerate()
+    if(!framerate){
+      //根据前两个非0视频帧时间戳估计
+      let first = this.videoTags[1].getTimestamp()
+      let second = this.videoTags[2].getTimestamp()
+      framerate = 30
+    }
+    let DurationFromCurrentMaxTimestamp = this.videoTags[this.videoTags.length - 1].getTimestamp()/1000
+    let Duration = Math.max(DurationFromCurrentMaxTimestamp,this.videoTags.length/framerate)
+    let { needUpdate } = this.scriptTags[0].setDuration(Duration)
+    Logger.notice(`帧率: ${framerate}/s`)
+    Logger.notice(`总帧数: ${this.videoTags.length}`)
+    Logger.notice(`视频长度: ${Duration}`)
+    // Logger.debug(`最大修复时间戳: ${this.videoTags[this.videoTags.length - 1].getTimestamp()}`)
     // if(needUpdate){
     //   this.updateInfo()
     // }

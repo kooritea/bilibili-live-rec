@@ -1,27 +1,27 @@
 const { isMainThread, threadId } = require('worker_threads');
 
 class Logger {
-  constructor() {
-    
+  constructor(namespace) {
+    this.namespace = namespace
   }
-  static notice(data) {
-    Logger._print('Notice', data)
+  notice(data) {
+    this._print('Notice', data)
   }
-  staticdebug(data) {
-    Logger._print('Debug', data)
+  debug(data) {
+    this._print('Debug', data)
   }
-  static _isMaster() {
-    return isMainThread ? 'Master' : `Worker(${threadId})`
-  }
-  static _print(level, text) {
+  _print(level, text) {
     if(typeof text === 'string' || typeof text === 'number' || typeof text === 'boolean' || typeof text === 'undefined' || text === null){
-      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${isMainThread?'Master':'Worker'}${isMainThread?'':'('+threadId+')'}][${level}]${text}`)
+      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${isMainThread?'Master':'Worker'}${isMainThread?'':'('+threadId+')'}][${this.namespace}][${level}]${text}`)
     }
     else{
-      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${isMainThread?'Master':'Worker'}(${threadId})][${level}]`)
+      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${isMainThread?'Master':'Worker'}(${threadId})][${this.namespace}][${level}]`)
       console.log(text)
     }
 
+  }
+  static _isMaster() {
+    return isMainThread ? 'Master' : `Worker(${threadId})`
   }
   static format(time, format) {
     let t = new Date(time);                                                //format(time, 'yyyy/MM/dd HH:mm:ss');

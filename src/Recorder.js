@@ -2,7 +2,7 @@ const fs = require('fs')
 const axios = require('axios')
 const request = require('request')
 const config = require('./_config.js')
-const Logger = require('./Logger.js')
+const Logger = new (require('./Logger.js'))('Recorder')
 const { format } = require('../lib/public.js')
 
 class Recorder {

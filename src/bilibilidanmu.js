@@ -4,7 +4,7 @@ const TextEncoder = require('util').TextEncoder;
 const TextDecoder = require('util').TextDecoder;
 const textEncoder = new TextEncoder('utf-8');
 const textDecoder = new TextDecoder('utf-8');
-const Logger = require('./Logger.js')
+const Logger = new (require('./Logger.js'))('DanmuServer')
 
 function encode(str, op) {
   const data = textEncoder.encode(str);

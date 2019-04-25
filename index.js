@@ -2,7 +2,7 @@ const {
   Worker, isMainThread, parentPort, workerData, threadId
 } = require('worker_threads');
 const config = require('./src/_config.js')
-const Logger = require('./src/Logger.js')
+const Logger = new (require('./src/Logger.js'))('Main')
 const { sleep } = require('./lib/public.js')
 
 if(isMainThread){
@@ -63,9 +63,15 @@ if(isMainThread){
 }else{
   const fs = require('fs')
   const FlVprocessor = require('./src/FLVprocessor.js')
+  const domain = require('domain').create();
 
-  let tmpFilename = workerData
-  try{
+  domain.on('error',(e)=>{
+    Logger.notice(`修复失败:${config.save}${tmpFilename}`);
+    Logger.notice(e)
+    process.exit();
+  })
+  domain.run(()=>{
+    let tmpFilename = workerData
     new FlVprocessor({
       input: `${config.tmp}${tmpFilename}`,
       output: `${config.save}${tmpFilename}`,
@@ -80,8 +86,5 @@ if(isMainThread){
         process.exit();
       }
     })
-  }catch(e){
-    Logger.notice(`修复失败:${config.save}${tmpFilename}`);
-    Logger.notice(e)
-  }
+  })
 }

@@ -1,5 +1,4 @@
 const Tag = require("./Tag.js")
-const Logger = require('./Logger.js')
 
 class SceiptTag extends Tag {
   constructor(buffer, offset) {
@@ -91,6 +90,14 @@ class SceiptTag extends Tag {
       case 8:
         //数组
         throw new Error('数组结构且缺少duration字段')
+    }
+  }
+  getFramerate(){
+    let item = this.findAFM2Key('framerate')
+    if(item){
+      return item.value
+    }else{
+      return null
     }
   }
   findAFM2Key(name){
