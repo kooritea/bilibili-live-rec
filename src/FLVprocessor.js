@@ -27,27 +27,27 @@ class FLVprocessor {
     this.videoTags = []
     this.audioTags = []
     this.tags = []
-    this.output = this.output?this.output:`${this.input}.fix.flv`
+    this.output = this.output ? this.output : `${this.input}.fix.flv`
     this.readFile()
   }
   async readFile() {
-    try{
+    try {
       await this.buffer.readFile()
       this.updateInfo()
-      if(!this.noFix){
+      if (!this.noFix) {
         await this.buffer.saveFile(this.output)
       }
-      if(typeof this.callback === 'function'){
+      if (typeof this.callback === 'function') {
         this.callback()
       }
-    }catch(e){
-      if(typeof this.error === 'function'){
+    } catch (e) {
+      if (typeof this.error === 'function') {
         this.error(e)
       }
     }
-    
+
   }
-  updateInfo(){
+  updateInfo() {
     this._offset = 0
     this.flvHeader = {}
     this.scriptTags = []
@@ -56,8 +56,8 @@ class FLVprocessor {
     this.tags = []
     this.getFlvHeader()
     this.getTags()
-    if(!this.scriptTags.length) throw '缺少控制帧'
-    if(!this.videoTags.length && this.scriptTags.length) throw '缺少数据帧'
+    if (!this.scriptTags.length) throw '缺少控制帧'
+    if (!this.videoTags.length && this.scriptTags.length) throw '缺少数据帧'
     this.fixTimestamp()
     this.fixDuration()
   }
@@ -87,36 +87,36 @@ class FLVprocessor {
     }
     this._offset += 4
   }
-  getTags(){
+  getTags() {
     let previousTag = null
-    while(true){
+    while (true) {
       let nextType = this.getNextTagType()
       let tag
-      if(nextType === 'unknow') {
-        tag = new Tag(this.buffer,this._offset)
-        if(tag.isBad) {
+      if (nextType === 'unknow') {
+        tag = new Tag(this.buffer, this._offset)
+        if (tag.isBad) {
           break
         }
-      }else if(nextType === 'audio'){
-        tag = new AudioTag(this.buffer,this._offset)
-        if(tag.isBad) {
+      } else if (nextType === 'audio') {
+        tag = new AudioTag(this.buffer, this._offset)
+        if (tag.isBad) {
           break
         }
         this.audioTags.push(tag)
-      } else if(nextType === 'video'){
-        tag = new VideoTag(this.buffer,this._offset)
-        if(tag.isBad) {
+      } else if (nextType === 'video') {
+        tag = new VideoTag(this.buffer, this._offset)
+        if (tag.isBad) {
           break
         }
         this.videoTags.push(tag)
-      } else if(nextType === 'script'){
-        tag = new ScriptTag(this.buffer,this._offset)
-        if(tag.isBad) {
+      } else if (nextType === 'script') {
+        tag = new ScriptTag(this.buffer, this._offset)
+        if (tag.isBad) {
           break
         }
         this.scriptTags.push(tag)
-      } else if(nextType === 'unknow'){
-        if(tag.isBad) {
+      } else if (nextType === 'unknow') {
+        if (tag.isBad) {
           break
         }
       }
@@ -126,10 +126,10 @@ class FLVprocessor {
       previousTag = tag
     }
   }
-  getNextTagType(){
-    if(this._offset + 5 > this.buffer.length) return 'unknow'
+  getNextTagType() {
+    if (this._offset + 5 > this.buffer.length) return 'unknow'
     let type = Number(this.buffer.readUIntBE(this._offset + 4, 1).toString(10))
-    switch(type){
+    switch (type) {
       case 8:
         return 'audio';
       case 9:
@@ -140,32 +140,32 @@ class FLVprocessor {
         return 'unknow'
     }
   }
-  fixTimestamp(){
+  fixTimestamp() {
     this.fixVideoTimestamp()
     this.fixAudioTimestamp()
   }
-  fixVideoTimestamp(){
+  fixVideoTimestamp() {
     let firstTag  //第一个tag的时间戳一定是0
     let baseTimestamp = 0 //上一个未修复是时间戳
     let previousTimestamp = 0 // 上一个已被修复的时间戳
     let previousTimestampDiff = 0 // 上一个时间戳差
     let onece = true
-    for(let videoTag of this.videoTags){
-      if(!firstTag){
+    for (let videoTag of this.videoTags) {
+      if (!firstTag) {
         firstTag = videoTag
         continue
       }
-      if(videoTag.getTimestamp() === 0){
+      if (videoTag.getTimestamp() === 0) {
         continue
       }
       let newTimestampDiff = videoTag.getTimestamp() - baseTimestamp
-      if(newTimestampDiff<0){//当上一个原始时间戳比当前原始时间戳更大
+      if (newTimestampDiff < 0) {//当上一个原始时间戳比当前原始时间戳更大
         newTimestampDiff = previousTimestampDiff
-      }else{
+      } else {
         previousTimestampDiff = newTimestampDiff
       }
 
-      if(onece && newTimestampDiff>100){
+      if (onece && newTimestampDiff > 100) {
         //仅在第二个帧是非顺序时间戳的时候进入
         onece = false
         newTimestampDiff = this.videoTags[this.videoTags.indexOf(videoTag) + 1].getTimestamp() - videoTag.getTimestamp()
@@ -175,28 +175,28 @@ class FLVprocessor {
       previousTimestamp = videoTag.getTimestamp()
     }
   }
-  fixAudioTimestamp(){
+  fixAudioTimestamp() {
     let firstTag  //第一个tag的时间戳一定是0
     let baseTimestamp = 0 //上一个未修复是时间戳
     let previousTimestamp = 0 // 上一个已被修复的时间戳
     let previousTimestampDiff = 0 // 上一个时间戳差
     let onece = true
-    for(let audioTag of this.audioTags){
-      if(!firstTag){
+    for (let audioTag of this.audioTags) {
+      if (!firstTag) {
         firstTag = audioTag
         continue
       }
-      if(audioTag.getTimestamp() === 0){
+      if (audioTag.getTimestamp() === 0) {
         continue
       }
       let newTimestampDiff = audioTag.getTimestamp() - baseTimestamp
-      if(newTimestampDiff<0){//当上一个原始时间戳比当前原始时间戳更大
+      if (newTimestampDiff < 0) {//当上一个原始时间戳比当前原始时间戳更大
         newTimestampDiff = previousTimestampDiff
-      }else{
+      } else {
         previousTimestampDiff = newTimestampDiff
       }
 
-      if(onece && newTimestampDiff>100){
+      if (onece && newTimestampDiff > 100) {
         //仅在第二个帧是非顺序时间戳的时候进入
         onece = false
         newTimestampDiff = this.audioTags[this.audioTags.indexOf(audioTag) + 1].getTimestamp() - audioTag.getTimestamp()
@@ -206,7 +206,7 @@ class FLVprocessor {
       previousTimestamp = audioTag.getTimestamp()
     }
   }
-  fixDuration(){
+  fixDuration() {
     let framerate = this.scriptTags[0].getFramerate()
     // if(!framerate){
     //   //根据前两个非0视频帧时间戳估计
@@ -214,19 +214,24 @@ class FLVprocessor {
     //   let second = this.videoTags[2].getTimestamp()
     //   framerate = 30
     // }
-    if(framerate !== 60){
-      framerate = 30
-      Logger.notice(`控制帧指定的帧率: ${framerate}/s`)
-      Logger.notice(`认定为非正常帧率，本次使用的帧率: ${framerate}/s`)
-    }else{
-      Logger.notice(`使用控制帧指定的帧率: ${framerate}/s`)
+    Logger.notice(`控制帧指定的帧率: ${framerate}/s`)
+    switch (framerate) {
+      case 60:
+        // Logger.notice(`控制帧指定的帧率: ${framerate}/s`)
+        break
+      case 30:
+        // Logger.notice(`控制帧指定的帧率: ${framerate}/s`)
+        break
+      default:
+        framerate = 30
+        Logger.notice(`非正常帧率，使用默认帧率: ${framerate}/s`)
     }
-    let DurationFromCurrentMaxTimestamp = this.videoTags[this.videoTags.length - 1].getTimestamp()/1000
-    let Duration = Math.max(DurationFromCurrentMaxTimestamp,this.videoTags.length/framerate)
+    let DurationFromCurrentMaxTimestamp = this.videoTags[this.videoTags.length - 1].getTimestamp() / 1000
+    let Duration = Math.max(DurationFromCurrentMaxTimestamp, this.videoTags.length / framerate)
     let { needUpdate } = this.scriptTags[0].setDuration(Duration)
-    
+
     Logger.notice(`总帧数: ${this.videoTags.length}`)
-    Logger.notice(`视频长度: ${parseInt(Duration/60)} min`)
+    Logger.notice(`视频长度: ${parseInt(Duration / 60)} min`)
     // Logger.debug(`最大修复时间戳: ${this.videoTags[this.videoTags.length - 1].getTimestamp()}`)
     // if(needUpdate){
     //   this.updateInfo()
