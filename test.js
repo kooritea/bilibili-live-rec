@@ -2,8 +2,8 @@ const FlVprocessor = require('./src/FLVprocessor.js')
 const config = require('./src/_config.js')
 
 new FlVprocessor({
-  noFix: true,
-  input: `${config.tmp}0403-白上吹雪-1.flv`,
+  // noFix: true,
+  input: `${config.tmp}0403-夏色祭-0.flv`,
   // input: `${config.save}test.flv`,
   output: `${config.save}test.flv`,
   callback(){
