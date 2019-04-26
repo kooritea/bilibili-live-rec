@@ -7,7 +7,7 @@ class Tag extends FlvMethod {
     this.offset = offset //tag在整个BigBuffer中的开始偏移量
     this.buffer = buffer //BigBuffer对象
     this._offset = offset //活动和的偏移量 扫描到的地方的指针
-    this.PreviousLen = {} //上一个tag的长度
+    this.PreviousLen = {} //上一个tag的长度 length - 4(PreviousLen)
     this.Type = {} //类型
     this.Datasize = {} //内容长度
     this.Timestamp = {} //时间戳

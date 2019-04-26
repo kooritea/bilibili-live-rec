@@ -1,7 +1,7 @@
 module.exports = {
   save: "./output/",
   tmp: "./output/tmp/",
-  deleteTmp: true, // 自动删除临时文件
+  deleteTmp: false, // 自动删除临时文件
   RoomList: [
     {
       nickname: '白上吹雪',

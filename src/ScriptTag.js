@@ -80,7 +80,7 @@ class SceiptTag extends Tag {
     durationBuf.writeInt16BE(8,0)
     durationBuf.write('duration',2)
     durationBuf.writeDoubleBE(duration,11)
-    switch(this.buffer.readInt8(this.AFM2Offset)){
+    switch(this.buffer.readUInt8(this.AFM2Offset)){
       case 3:
         //对象
         this.buffer.writeUIntBE(this.Datasize.value+19,this.Datasize.offset,3)

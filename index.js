@@ -20,7 +20,7 @@ if(isMainThread){
               recready(room)
             },20000)
           }else{
-            Logger.notice(`[${room.nickname}]已重试10次失败，停止重试`)
+            // Logger.notice(`[${room.nickname}]已重试10次失败，停止重试`)
           }
         }
         else{
@@ -63,28 +63,25 @@ if(isMainThread){
 }else{
   const fs = require('fs')
   const FlVprocessor = require('./src/FLVprocessor.js')
-  const domain = require('domain').create();
+  let tmpFilename = workerData
 
-  domain.on('error',(e)=>{
-    Logger.notice(`修复失败:${config.save}${tmpFilename}`);
-    Logger.notice(e)
-    process.exit();
-  })
-  domain.run(()=>{
-    let tmpFilename = workerData
-    new FlVprocessor({
-      input: `${config.tmp}${tmpFilename}`,
-      output: `${config.save}${tmpFilename}`,
-      callback(){
-        Logger.notice(`处理已完成： ${config.save}${tmpFilename}`)
-        if(config.deleteTmp){
-          fs.unlink(`${config.tmp}${tmpFilename}`, (err) => {
-            if (err) throw err;
-            Logger.notice(`删除临时文件：${config.tmp}${tmpFilename}`);
-          });
-        }
-        process.exit();
+  new FlVprocessor({
+    input: `${config.tmp}${tmpFilename}`,
+    output: `${config.save}${tmpFilename}`,
+    callback(){
+      Logger.notice(`处理已完成： ${tmpFilename}`)
+      if(config.deleteTmp){
+        fs.unlink(`${config.tmp}${tmpFilename}`, (err) => {
+          if (err) throw err;
+          Logger.notice(`删除临时文件：${tmpFilename}`);
+        });
       }
-    })
+      process.exit();
+    },
+    error(e){
+      Logger.notice(`修复失败:${tmpFilename}`);
+      Logger.notice(e)
+      process.exit();
+    }
   })
 }

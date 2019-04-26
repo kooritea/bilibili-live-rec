@@ -2,6 +2,7 @@ const BigBuffer = require("../lib/BigBuffer.js")
 const ScriptTag = require("./ScriptTag.js")
 const VideoTag = require("./VideoTag.js")
 const AudioTag = require("./AudioTag.js")
+const Tag = require("./Tag.js")
 const Logger = new (require("./Logger.js"))('FLVprocessor')
 
 class FLVprocessor {
@@ -11,11 +12,12 @@ class FLVprocessor {
         this.input = args
         break
       case 'object':
-        let { input, output, callback, noFix } = args
+        let { input, output, callback, noFix, error } = args
         this.input = input
         this.output = output
         this.callback = callback
         this.noFix = noFix
+        this.error = error
         break
     }
     this.buffer = new BigBuffer(this.input)
@@ -28,18 +30,22 @@ class FLVprocessor {
     this.output = this.output?this.output:`${this.input}.fix.flv`
     this.readFile()
   }
-  readFile() {
-    this.buffer.readcb = () => {
+  async readFile() {
+    try{
+      await this.buffer.readFile()
       this.updateInfo()
       if(!this.noFix){
-        this.buffer.saveFile(this.output,()=>{
-          if(typeof this.callback === 'function'){
-            this.callback()
-          }
-        })
+        await this.buffer.saveFile(this.output)
+      }
+      if(typeof this.callback === 'function'){
+        this.callback()
+      }
+    }catch(e){
+      if(typeof this.error === 'function'){
+        this.error(e)
       }
     }
-    this.buffer.readFile()
+    
   }
   updateInfo(){
     this._offset = 0
@@ -50,6 +56,8 @@ class FLVprocessor {
     this.tags = []
     this.getFlvHeader()
     this.getTags()
+    if(!this.scriptTags.length) throw '缺少控制帧'
+    if(!this.videoTags.length && this.scriptTags.length) throw '缺少数据帧'
     this.fixTimestamp()
     this.fixDuration()
   }
@@ -83,22 +91,34 @@ class FLVprocessor {
     let previousTag = null
     while(true){
       let nextType = this.getNextTagType()
-      if(nextType === 'unknow')return
       let tag
-      if(nextType === 'audio'){
+      if(nextType === 'unknow') {
+        tag = new Tag(this.buffer,this._offset)
+        if(tag.isBad) {
+          break
+        }
+      }else if(nextType === 'audio'){
         tag = new AudioTag(this.buffer,this._offset)
-        if(tag.isBad) return
+        if(tag.isBad) {
+          break
+        }
         this.audioTags.push(tag)
       } else if(nextType === 'video'){
         tag = new VideoTag(this.buffer,this._offset)
-        if(tag.isBad) return
+        if(tag.isBad) {
+          break
+        }
         this.videoTags.push(tag)
       } else if(nextType === 'script'){
         tag = new ScriptTag(this.buffer,this._offset)
-        if(tag.isBad) return
+        if(tag.isBad) {
+          break
+        }
         this.scriptTags.push(tag)
       } else if(nextType === 'unknow'){
-        if(tag.isBad) return
+        if(tag.isBad) {
+          break
+        }
       }
       this._offset += tag.length
       tag.previousTag = previousTag
@@ -126,49 +146,63 @@ class FLVprocessor {
   }
   fixVideoTimestamp(){
     let firstTag  //第一个tag的时间戳一定是0
-    let baseTimestamp = 0
-    let previousTimestamp = 0
+    let baseTimestamp = 0 //上一个未修复是时间戳
+    let previousTimestamp = 0 // 上一个已被修复的时间戳
+    let previousTimestampDiff = 0 // 上一个时间戳差
     let onece = true
     for(let videoTag of this.videoTags){
       if(!firstTag){
         firstTag = videoTag
         continue
       }
-      let newTimestamp = videoTag.getTimestamp() - baseTimestamp
-      if(newTimestamp<0){
-        newTimestamp = videoTag.getTimestamp()
+      if(videoTag.getTimestamp() === 0){
+        continue
       }
-      if(onece && newTimestamp>100){
+      let newTimestampDiff = videoTag.getTimestamp() - baseTimestamp
+      if(newTimestampDiff<0){//当上一个原始时间戳比当前原始时间戳更大
+        newTimestampDiff = previousTimestampDiff
+      }else{
+        previousTimestampDiff = newTimestampDiff
+      }
+
+      if(onece && newTimestampDiff>100){
         //仅在第二个帧是非顺序时间戳的时候进入
         onece = false
-        newTimestamp = this.videoTags[this.videoTags.indexOf(videoTag) + 1].getTimestamp() - videoTag.getTimestamp()
+        newTimestampDiff = this.videoTags[this.videoTags.indexOf(videoTag) + 1].getTimestamp() - videoTag.getTimestamp()
       }
       baseTimestamp = videoTag.getTimestamp()
-      videoTag.setTimestamp(previousTimestamp + newTimestamp)
+      videoTag.setTimestamp(previousTimestamp + newTimestampDiff)
       previousTimestamp = videoTag.getTimestamp()
     }
   }
   fixAudioTimestamp(){
     let firstTag  //第一个tag的时间戳一定是0
-    let baseTimestamp = 0
-    let previousTimestamp = 0
+    let baseTimestamp = 0 //上一个未修复是时间戳
+    let previousTimestamp = 0 // 上一个已被修复的时间戳
+    let previousTimestampDiff = 0 // 上一个时间戳差
     let onece = true
     for(let audioTag of this.audioTags){
       if(!firstTag){
         firstTag = audioTag
         continue
       }
-      let newTimestamp = audioTag.getTimestamp() - baseTimestamp
-      if(newTimestamp<0){
-        newTimestamp = audioTag.getTimestamp()
+      if(audioTag.getTimestamp() === 0){
+        continue
       }
-      if(onece && newTimestamp>100){
+      let newTimestampDiff = audioTag.getTimestamp() - baseTimestamp
+      if(newTimestampDiff<0){//当上一个原始时间戳比当前原始时间戳更大
+        newTimestampDiff = previousTimestampDiff
+      }else{
+        previousTimestampDiff = newTimestampDiff
+      }
+
+      if(onece && newTimestampDiff>100){
         //仅在第二个帧是非顺序时间戳的时候进入
         onece = false
-        newTimestamp = this.audioTags[this.audioTags.indexOf(audioTag) + 1].getTimestamp() - audioTag.getTimestamp()
+        newTimestampDiff = this.audioTags[this.audioTags.indexOf(audioTag) + 1].getTimestamp() - audioTag.getTimestamp()
       }
       baseTimestamp = audioTag.getTimestamp()
-      audioTag.setTimestamp(previousTimestamp + newTimestamp)
+      audioTag.setTimestamp(previousTimestamp + newTimestampDiff)
       previousTimestamp = audioTag.getTimestamp()
     }
   }
@@ -185,7 +219,7 @@ class FLVprocessor {
     let { needUpdate } = this.scriptTags[0].setDuration(Duration)
     Logger.notice(`帧率: ${framerate}/s`)
     Logger.notice(`总帧数: ${this.videoTags.length}`)
-    Logger.notice(`视频长度: ${Duration}`)
+    Logger.notice(`视频长度: ${parseInt(Duration/60)}min`)
     // Logger.debug(`最大修复时间戳: ${this.videoTags[this.videoTags.length - 1].getTimestamp()}`)
     // if(needUpdate){
     //   this.updateInfo()
