@@ -15,12 +15,12 @@ if(isMainThread){
       httpResCallback: function(code){
         if(code !== 200){
           room.try++;
-          if(room.try < 10){
+          if(room.try < 15){// bilibilidanmu模块设置了15分钟下播缓冲防止断线后重复录制，这里每60s重试一次，重试15次
             setTimeout(()=>{
               recready(room)
-            },20000)
+            },60000)
           }else{
-            Logger.debug(`[${room.nickname}]已重试10次失败，停止重试，状态码: ${code}`)
+            Logger.debug(`[${room.nickname}]已重试15次失败，停止重试，状态码: ${code}`)
           }
         }
         else{

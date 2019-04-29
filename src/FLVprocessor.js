@@ -150,7 +150,7 @@ class FLVprocessor {
   }
   fixVideoTimestamp() {
     let firstTag  //第一个tag的时间戳一定是0
-    let baseTimestamp = 0 //上一个未修复是时间戳
+    let baseTimestamp = 0 //上一个未修复的时间戳
     let previousTimestamp = 0 // 上一个已被修复的时间戳
     let previousTimestampDiff = 0 // 上一个时间戳差
     let onece = true
@@ -181,7 +181,7 @@ class FLVprocessor {
   }
   fixAudioTimestamp() {
     let firstTag  //第一个tag的时间戳一定是0
-    let baseTimestamp = 0 //上一个未修复是时间戳
+    let baseTimestamp = 0 //上一个未修复的时间戳
     let previousTimestamp = 0 // 上一个已被修复的时间戳
     let previousTimestampDiff = 0 // 上一个时间戳差
     let onece = true
