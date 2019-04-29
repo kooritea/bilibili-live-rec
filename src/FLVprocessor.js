@@ -249,7 +249,11 @@ class FLVprocessor {
     Logger.debug(`控制帧指示帧率: ${framerate}`)
     Logger.debug(`总帧数: ${this.videoTags.length}`)
     if (Duration > 1) {
-      Logger.notice(`帧率: ${setFramerate}/s`)
+      if(setFramerate !== framerate){
+        Logger.notice(`猜测帧率: ${setFramerate}/s`)
+      }else{
+        Logger.notice(`帧率: ${setFramerate}/s`)
+      }
       Logger.notice(`视频长度: ${Duration} min`)
     }
     this.result.Duration = Duration

@@ -31,6 +31,7 @@ module.exports = {
   save: "./output/", //处理后的视频存放目录
   tmp: "./output/tmp/", // 未处理的临时存放目录
   deleteTmp: false, // 自动删除临时文件 不建议打开，建议手动清除
+  debug: false,
   RoomList: [
     {
       nickname: '白上吹雪',// 不填则默认以roomid作为nickname
