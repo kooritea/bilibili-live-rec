@@ -12,9 +12,10 @@ class FLVprocessor {
         this.input = args
         break
       case 'object':
-        let { input, output, callback, noFix, error } = args
+        let { input, output, recorderTime, callback, noFix, error } = args
         this.input = input
         this.output = output
+        this.recorderTime = recorderTime
         this.callback = callback
         this.noFix = noFix
         this.error = error
@@ -28,6 +29,9 @@ class FLVprocessor {
     this.audioTags = []
     this.tags = []
     this.output = this.output ? this.output : `${this.input}.fix.flv`
+    this.result = { // 处理完成后回调方法的参数
+      Duration: -1
+    }
     this.readFile()
   }
   async readFile() {
@@ -38,7 +42,7 @@ class FLVprocessor {
         await this.buffer.saveFile(this.output)
       }
       if (typeof this.callback === 'function') {
-        this.callback()
+        this.callback(this.result)
       }
     } catch (e) {
       if (typeof this.error === 'function') {
@@ -214,25 +218,41 @@ class FLVprocessor {
     //   let second = this.videoTags[2].getTimestamp()
     //   framerate = 30
     // }
-    Logger.notice(`控制帧指定的帧率: ${framerate}/s`)
+
+    let setFramerate
     switch (framerate) {
       case 60:
         // Logger.notice(`控制帧指定的帧率: ${framerate}/s`)
+        setFramerate = framerate
         break
       case 30:
         // Logger.notice(`控制帧指定的帧率: ${framerate}/s`)
+        setFramerate = framerate
         break
       default:
-        framerate = 30
-        Logger.notice(`非正常帧率，使用默认帧率: ${framerate}/s`)
+        setFramerate = 30
+        // Logger.notice(`非正常帧率，使用默认帧率: ${framerate}/s`)
     }
-    let DurationFromCurrentMaxTimestamp = this.videoTags[this.videoTags.length - 1].getTimestamp() / 1000
-    let Duration = Math.max(DurationFromCurrentMaxTimestamp, this.videoTags.length / framerate)
-    let { needUpdate } = this.scriptTags[0].setDuration(Duration)
-
-    Logger.notice(`总帧数: ${this.videoTags.length}`)
-    Logger.notice(`视频长度: ${parseInt(Duration / 60)} min`)
-    // Logger.debug(`最大修复时间戳: ${this.videoTags[this.videoTags.length - 1].getTimestamp()}`)
+    let recorderTime = this.recorderTime ? this.recorderTime / 1000 : 0 //录制实际使用秒数
+    let DurationFromCurrentMaxTimestamp = this.videoTags[this.videoTags.length - 1].getTimestamp() / 1000 // 最大的时间戳/1000 算出视频长度
+    let DurationFromFramerate = this.videoTags.length / setFramerate //根据总帧数和帧率算出视频长度
+    let Duration
+    if(recorderTime){
+      Duration = FLVprocessor.findCloseNum([DurationFromCurrentMaxTimestamp, DurationFromFramerate],recorderTime)
+      //选出最接近录制时间的长度
+    }else{
+      //没有传入录制时间，直接取最大值
+      Duration = Math.max(DurationFromCurrentMaxTimestamp, DurationFromFramerate)
+    }
+    this.scriptTags[0].setDuration(Duration) // 返回了{ needUpdate } 来判断是否需要重新扫描文件，这个操作放在最后所以不需要update
+    Duration = Number((Duration / 60).toFixed(1)) // 化成分钟为单位，保留一位小数
+    Logger.debug(`控制帧指示帧率: ${framerate}`)
+    Logger.debug(`总帧数: ${this.videoTags.length}`)
+    if (Duration > 1) {
+      Logger.notice(`帧率: ${setFramerate}/s`)
+      Logger.notice(`视频长度: ${Duration} min`)
+    }
+    this.result.Duration = Duration
     // if(needUpdate){
     //   this.updateInfo()
     // }
@@ -243,6 +263,19 @@ class FLVprocessor {
       newstr = '0' + newstr
     }
     return newstr
+  }
+  static findCloseNum(arry,target){
+    let min = arry[0]
+    let result
+    let i=0
+    for(;i<arry.length;i++){
+      let item = arry[i]
+      if(Math.abs(target - item) < min){
+        min = Math.abs(target - item)
+        result = item
+      }
+    }
+    return result
   }
 }
 

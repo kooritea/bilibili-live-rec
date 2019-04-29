@@ -235,7 +235,6 @@ function listen(room,recready){
   if(!room.roomid) throw new Error('Not fount roomid')
   room.status = false
   room.timeout = null
-  room.lastdanmu = null
   room.try = 0
   room.nickname = room.nickname?room.nickname:room.roomid
   ListenRoom(room.roomid,{
