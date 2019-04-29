@@ -1,4 +1,5 @@
 const { isMainThread, threadId } = require('worker_threads');
+const config = require('../config.js')
 
 class Logger {
   constructor(namespace) {
@@ -8,7 +9,9 @@ class Logger {
     this._print('Notice', data)
   }
   debug(data) {
-    this._print('Debug', data)
+    if(config.debug){
+      this._print('Debug', data)
+    }
   }
   _print(level, text) {
     if(typeof text === 'string' || typeof text === 'number' || typeof text === 'boolean' || typeof text === 'undefined' || text === null){
