@@ -15,10 +15,10 @@ class Logger {
   }
   _print(level, text) {
     if(typeof text === 'string' || typeof text === 'number' || typeof text === 'boolean' || typeof text === 'undefined' || text === null){
-      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${isMainThread?'Master':'Worker'}${isMainThread?'':'('+threadId+')'}][${this.namespace}][${level}]${text}`)
+      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${Logger._isMaster()}][${this.namespace}][${level}]${text}`)
     }
     else{
-      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${isMainThread?'Master':'Worker'}(${threadId})][${this.namespace}][${level}]`)
+      console.log(`[${Logger.format(new Date(),'HH:mm:ss')}][${Logger._isMaster()}][${this.namespace}][${level}]`)
       console.log(text)
     }
 
@@ -43,8 +43,6 @@ class Logger {
           return tf(t.getHours());
         case 'ss':
           return tf(t.getSeconds());
-        case 'DD':
-          return zhDay(t.getDay())
       }
     })
   }

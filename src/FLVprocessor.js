@@ -61,7 +61,7 @@ class FLVprocessor {
     this.getFlvHeader()
     this.getTags()
     if (!this.scriptTags.length) throw '缺少控制帧'
-    if (!this.videoTags.length && this.scriptTags.length) throw '缺少数据帧'
+    if (!this.videoTags.length && this.audioTags.length) throw '缺少数据帧'
     this.fixTimestamp()
     this.fixDuration()
   }
