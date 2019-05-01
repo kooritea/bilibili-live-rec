@@ -20,6 +20,7 @@ if(isMainThread){
               recready(room)
             },60000)
           }else{
+            room.try = 0
             Logger.debug(`[${room.nickname}]已重试15次失败，停止重试，状态码: ${code}`)
           }
         }
