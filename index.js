@@ -30,11 +30,13 @@ if(isMainThread){
           room.startTimestamp = (new Date()).valueOf()//记录录制开始的时间
         }
       },
-      recEndCallback: function({tmpFilename}){
+      recEndCallback: function({tmpFilename, nickname, time}){
         Logger.notice(`[${room.nickname}]录制已结束，开始处理: ${tmpFilename}`)
         new Worker(__filename,{
           workerData: {
             tmpFilename,
+            nickname,
+            time,
             recorderTime: (new Date()).valueOf() - room.startTimestamp
           }
         })
@@ -74,16 +76,16 @@ if(isMainThread){
 }else{
   const fs = require('fs')
   const FlVprocessor = require('./src/FLVprocessor.js')
-  let {tmpFilename, recorderTime} = workerData
+  let { tmpFilename, nickname, time, recorderTime } = workerData
   new FlVprocessor({
     input: `${config.tmp}${tmpFilename}`,
-    output: `${config.save}${tmpFilename}`,
+    output: `${config.save}${time}-${nickname}.flv`,
     recorderTime,
     callback({ Duration }){
       if(Duration > 1){
         
       }
-      Logger.notice(`处理已完成： ${tmpFilename}`)
+      Logger.notice(`处理已完成： ${time}-${nickname}.flv`)
       if(config.deleteTmp){
         fs.unlink(`${config.tmp}${tmpFilename}`, (err) => {
           if (err) throw err;

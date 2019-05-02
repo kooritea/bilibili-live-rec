@@ -15,6 +15,11 @@ class Recorder {
     this.httpResCallback = httpResCallback
     this.recEndCallback = recEndCallback
     this.tmpFilename = `${format(new Date(),'MMdd')}-${this.nickname}-${(new Date()).valueOf()}.flv`
+    this.recEndCallbackResult = {
+      tmpFilename: this.tmpFilename,
+      nickname: this.nickname,
+      time: format(new Date(),'MMdd-HHmm')
+    }
     this.start()
   }
 
@@ -73,7 +78,7 @@ class Recorder {
 
   tryFix(){
     if(this.isFinish && this.isHttpEnd){
-      this.recEndCallback({tmpFilename: this.tmpFilename})
+      this.recEndCallback(this.recEndCallbackResult)
     }else{
       // Logger.debug('未满足修复条件')
       // Logger.debug(`isFinish: ${this.isFinish}`)
