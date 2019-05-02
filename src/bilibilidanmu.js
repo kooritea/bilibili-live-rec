@@ -233,10 +233,6 @@ async function delEvent(roomid,type,eventId){
 }
 function listen(room,recready){
   if(!room.roomid) throw new Error('Not fount roomid')
-  room.status = false
-  room.timeout = null
-  room.try = 0
-  room.nickname = room.nickname?room.nickname:room.roomid
   ListenRoom(room.roomid,{
     opencb: function(){
       Logger.notice(`打开直播间链接: ${room.nickname}`)

@@ -53,6 +53,10 @@ if(isMainThread){
       //   nickname: '夏色祭', // 播主昵称
       //   startTimestamp: 0 // 开始录制的时间戳，用于估计视频长度
       // }
+      room.status = false
+      room.timeout = null
+      room.try = 0
+      room.nickname = room.nickname?room.nickname:room.roomid
       try{
         listen(room,recready)
       }catch(e){
