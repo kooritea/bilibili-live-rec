@@ -8,6 +8,7 @@ const { sleep } = require('./lib/public.js')
 if(isMainThread){
   const { listen } = require('./src/bilibilidanmu.js');
   const Recorder = require('./src/Recorder.js')
+  const { getRoomId, isLive } = require('./src/bilibili-api.js')
   function recready(room){
     return new Recorder({
       nickname: room.nickname,
@@ -58,6 +59,11 @@ if(isMainThread){
       room.try = 0
       room.nickname = room.nickname?room.nickname:room.roomid
       try{
+        room.roomid = await getRoomId(room.roomid)//短id转换
+        room.status = await isLive(room.roomid)
+        if(room.status){
+          recready(room)
+        }
         listen(room,recready)
       }catch(e){
         Logger.notice(e)
