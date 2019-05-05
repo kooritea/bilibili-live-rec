@@ -15,7 +15,7 @@ if(isMainThread){
   let exit = false //线程退出会检查这个变量。如果为真则退出程序
 
   function recready(room){
-    Recorders.push(new Recorder({
+    let recorder =  new Recorder({
       nickname: room.nickname,
       roomid: room.roomid,
       httpResCallback: function(code, retry){
@@ -34,6 +34,7 @@ if(isMainThread){
         }
         else{
           Logger.notice(`[${room.nickname}]录制已开始`)
+          Recorders.push(recorder)
           room.try = 0
           room.startTimestamp = (new Date()).valueOf()//记录录制开始的时间
         }
@@ -49,6 +50,8 @@ if(isMainThread){
           }
         })
         Threads++;
+        Recorders.splice(Recorders.indexOf(recorder),1)
+        Logger.debug(`正在录制数: ${Recorders.length}`)
         if(retry){
           recready(room)
         }
@@ -59,9 +62,21 @@ if(isMainThread){
           }
         }) 
       }
-    }))
+    })
   }
   (async function(){
+    process.on('SIGINT', function () {
+      Recorders.forEach((item)=>{
+        item.stop()
+      })
+      if(!Threads && !Recorders.length){
+        process.exit()
+      }else{
+        console.log()//打印一个空行，美观
+      }
+      exit = true
+    });
+    
     for(let room of config.RoomList){
       // room = {
       //   status: false,//开关播状态，true为正在直播
@@ -86,14 +101,6 @@ if(isMainThread){
       }
       await sleep(5000)
     }
-    process.on('SIGINT', function () {
-      console.log()//打印一个空行，美观
-      Recorders.forEach((item)=>{
-        item.stop()
-      })
-      exit = true
-      // process.exit();
-    });
     // setTimeout(()=>{
     //   recready({
     //     nickname: 'una',
