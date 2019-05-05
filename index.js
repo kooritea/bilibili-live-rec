@@ -9,16 +9,23 @@ if(isMainThread){
   const { listen } = require('./src/bilibilidanmu.js');
   const Recorder = require('./src/Recorder.js')
   const { getRoomId, isLive } = require('./src/bilibili-api.js')
+
+  const Recorders = [] //所有录制对象都放在这里，用于退出时中断
+  let Threads = 0 //子线程数量
+  let exit = false //线程退出会检查这个变量。如果为真则退出程序
+
   function recready(room){
-    return new Recorder({
+    Recorders.push(new Recorder({
       nickname: room.nickname,
       roomid: room.roomid,
-      httpResCallback: function(code){
+      httpResCallback: function(code, retry){
         if(code !== 200){
           room.try++;
           if(room.try < 15){// bilibilidanmu模块设置了15分钟下播缓冲防止断线后重复录制，这里每60s重试一次，重试15次
             setTimeout(()=>{
-              recready(room)
+              if(retry){
+                recready(room)
+              }  
             },60000)
           }else{
             room.try = 0
@@ -31,9 +38,9 @@ if(isMainThread){
           room.startTimestamp = (new Date()).valueOf()//记录录制开始的时间
         }
       },
-      recEndCallback: function({tmpFilename, nickname, time}){
+      recEndCallback: function({tmpFilename, nickname, time, retry}){
         Logger.notice(`[${room.nickname}]录制已结束，开始处理: ${tmpFilename}`)
-        new Worker(__filename,{
+        let worker = new Worker(__filename,{
           workerData: {
             tmpFilename,
             nickname,
@@ -41,9 +48,18 @@ if(isMainThread){
             recorderTime: (new Date()).valueOf() - room.startTimestamp
           }
         })
-        recready(room)
+        Threads++;
+        if(retry){
+          recready(room)
+        }
+        worker.on('exit', ()=>{
+          Threads--;
+          if(Threads === 0 && exit){
+            process.exit()
+          }
+        }) 
       }
-    })
+    }))
   }
   (async function(){
     for(let room of config.RoomList){
@@ -70,17 +86,22 @@ if(isMainThread){
       }
       await sleep(5000)
     }
+    process.on('SIGINT', function () {
+      console.log()//打印一个空行，美观
+      Recorders.forEach((item)=>{
+        item.stop()
+      })
+      exit = true
+      // process.exit();
+    });
     // setTimeout(()=>{
-    //   let flv = recready({
+    //   recready({
     //     nickname: 'una',
     //     roomid: 43822,
     //     status :false,
     //     timeout : null,
     //     try : 0,
     //   })
-    //   setTimeout(()=>{
-    //     flv.stop()
-    //   },30000)
     // })
   })()
 }else{
