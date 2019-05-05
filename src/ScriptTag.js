@@ -3,6 +3,7 @@ const Tag = require("./Tag.js")
 class SceiptTag extends Tag {
   constructor(buffer, offset) {
     super(buffer, offset)
+    this.tagBodyOffset = this._offset
     this.isNull = false
     this.AFM2Offset = 0
     this.AFM1 = {}

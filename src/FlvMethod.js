@@ -79,5 +79,12 @@ class FlvMethod {
         break
     }
   }
+  static binaryFill(str, sum) {//补全二进制缺的位数
+    let newstr = str
+    for (let i = 0; i < sum - str.length; i++) {
+      newstr = '0' + newstr
+    }
+    return newstr
+  }
 }
 module.exports = FlvMethod
