@@ -14,6 +14,7 @@ class Recorder {
     this.isFinish = false
     this.httpResCallback = httpResCallback
     this.recEndCallback = recEndCallback
+    this.retry = true //主动stop时设为false
     this.tmpFilename = `${format(new Date(),'MMdd')}-${this.nickname}-${(new Date()).valueOf()}.flv`
     this.recEndCallbackResult = {
       tmpFilename: this.tmpFilename,
@@ -64,7 +65,7 @@ class Recorder {
     this.req.on('response',(response)=>{
       // Logger.debug('response')
       if(typeof this.httpResCallback === 'function'){
-        this.httpResCallback(response.statusCode)
+        this.httpResCallback(response.statusCode, this.retry)
       }
       this.statusCode = response.statusCode
     })
@@ -78,6 +79,7 @@ class Recorder {
 
   tryFix(){
     if(this.isFinish && this.isHttpEnd){
+      this.recEndCallbackResult.retry = this.retry
       this.recEndCallback(this.recEndCallbackResult)
     }else{
       // Logger.debug('未满足修复条件')
@@ -88,6 +90,7 @@ class Recorder {
   }
 
   stop(){
+    this.retry = false
     this.req.abort()
   }
 }
