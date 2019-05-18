@@ -11,6 +11,14 @@ module.exports = {
     {
       nickname: '夏色祭',
       roomid: 13946381
+    },
+    {
+      nickname: 'aqua',
+      roomid: 14917277
+    },
+    {
+      nickname: 'mana',
+      roomid: 3822389
     }
   ]
 }
