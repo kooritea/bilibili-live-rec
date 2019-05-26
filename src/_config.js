@@ -24,7 +24,7 @@ if(isMainThread){
     mkdirsSync(config.save)
     Logger.notice(`保存路径不存在，已创建`)
   }
-  if(!fs.existsSync(config.save)){
+  if(!fs.existsSync(config.tmp)){
     mkdirsSync(config.tmp)
     Logger.notice(`临时保存路径不存在，已创建`)
   }
